@@ -6,7 +6,7 @@ import 'dart:math';
 
 // Import du framework Flutter.
 import 'package:flutter/material.dart';
-import 'package:popit/uppgrade.dart';
+import 'package:popit/shop.dart';
 import 'jeu.dart';
 
 class MainMenu extends StatelessWidget {

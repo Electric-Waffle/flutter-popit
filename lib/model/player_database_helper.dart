@@ -11,11 +11,12 @@ class PlayerDatabaseHelper extends DatabaseHelper {
     db.execute('''
       CREATE TABLE IF NOT EXISTS player (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        vie FLOAT,
         vie_base FLOAT,
-        point INT
+        point INT,
+        niveau_shop_vie INT
       );
     ''');
+    // ICI
   }
 
   @override
@@ -31,34 +32,36 @@ class PlayerDatabaseHelper extends DatabaseHelper {
     List<Player> resultInList = result
         .map((row) => Player(
               row['id'] as int,
-              row['vie'] as double,
               row['vie_base'] as double,
               row['point'] as int,
+              row['niveau_shop_vie'] as int,
             ))
+            //ICI
         .toList();
 
     if (resultInList.isEmpty) {
       db.execute('''
-        INSERT INTO player(vie, vie_base, point) values (10.0, 10, 0)
+        INSERT INTO player(vie_base, point, niveau_shop_vie) values (10.0, 0, 0)
     ''');
+    // ICI
     }
   }
 
   void saveData(Player joueur)
   {
-    db.execute('UPDATE player SET vie = ? and vie_base = ? and points = ? where id = ?', [joueur.getVie(), joueur.getVieBase(), joueur.getPoints(), joueur.getId()]);
-  }
+    db.execute('UPDATE player set vie_base = ? , point = ?, niveau_shop_vie = ? where id = ?', [joueur.getVieBase(), joueur.getPoint(), joueur.getNiveauShopVie(), joueur.getId()]);
+  }// ICI
 
   Player loadData()
   {
-    final result = db.select('SELECT * FROM solar_system_object where id = 1');
+    final result = db.select('SELECT * FROM player');
 
     return  Player(
               result[0]['id'] as int,
-              result[0]['vie'] as double,
               result[0]['vie_base'] as double,
               result[0]['point'] as int,
+              result[0]['niveau_shop_vie'] as int,
             );
-  }
+  }// ICI
   
 }

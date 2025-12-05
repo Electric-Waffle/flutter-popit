@@ -6,7 +6,7 @@ import 'dart:math';
 
 // Import du framework Flutter.
 import 'package:flutter/material.dart';
-import 'mainMenu.dart';
+import 'main_menu.dart';
 
 void main() {
   runApp(const MyApp());
