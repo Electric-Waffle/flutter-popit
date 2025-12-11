@@ -29,7 +29,7 @@ class _JeuState extends State<Jeu> with RouteAware {
   // Liste pour suivre si une bulle doit être affichée pour chaque case.
   late List<int> isBubbleList;
 
-  int difficulty = 9;
+  int difficulty = 1;
 
   // Timer pour déclencher les nouvelles bulles.
   late Timer bubbleChangeTimer = Timer(Duration.zero, () {});
@@ -57,7 +57,14 @@ class _JeuState extends State<Jeu> with RouteAware {
     if (isBubbleList[index] != 0 && joueur.isAlive()) {
       joueur.doGivePoints(isBubbleList[index]);
       setState(() {
+        //print("yep $index : ${isBubbleList[index]}");
         isBubbleList[index] = isBubbleList[index]-1;
+      });
+    }
+    else if (isBubbleList[index] == 0 && joueur.isAlive()) {
+      setState(() {
+        //print("nope $index : ${isBubbleList[index]}");
+        joueur.doDamage(1);
       });
     }
   }

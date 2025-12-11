@@ -24,12 +24,11 @@ class _UppgradeState extends State<Uppgrade> {
   late Player joueur;
   late List<ShopUppgrade> uppgrades;
 
-  _UppgradeState()
-  {
+  @override
+  void initState() {
+    super.initState();
     this.joueur = sauvegarde.loadData();
-    this.uppgrades = [
-      ShopUppgrade(Colors.red, "Vie", "Gagne 10 points de vie par niveau", joueur.getNiveauShopVie(), 5, 15*joueur.getNiveauShopVie()),
-    ];
+    recreeListeUppgrades();
   }
 
   void recreeListeUppgrades()
@@ -70,31 +69,29 @@ class _UppgradeState extends State<Uppgrade> {
               ),
         ],
       ),
+
+
       body: Padding(
         padding: const EdgeInsets.all(15.0),
-        child: GridView.count(
-          crossAxisCount: 3, // 👉 3 colonnes
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          children: [
-            ListView.builder(
-              itemCount: uppgrades.length,
-              itemBuilder: (context, index) {
-                return buildRoundedBox(uppgrades[index]);
-              },
-            )
+        child: 
+          GridView.builder(
+
+            gridDelegate:  
+              const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 5,
+                crossAxisSpacing: 30,
+                mainAxisSpacing: 30,
+              ),
+
+            itemCount: uppgrades.length,
             
-            // buildRoundedBox(Colors.green, "Vert"),
-            // buildRoundedBox(Colors.blue, "Bleu"),
-            // buildRoundedBox(Colors.orange, "Orange"),
-            // buildRoundedBox(Colors.purple, "Mauve"),
-            // buildRoundedBox(Colors.yellow, "Jaune"),
-            // buildRoundedBox(Colors.cyan, "Cyan"),
-            // buildRoundedBox(Colors.pink, "Rose"),
-            // buildRoundedBox(Colors.teal, "Teal"),
-          ],
+            itemBuilder: (context, index) {
+              return buildRoundedBox(uppgrades[index]);
+            },
+          )
         ),
-      ),
+
+
       floatingActionButton: FloatingActionButton(
         onPressed: ()  
           async {
@@ -125,13 +122,14 @@ class _UppgradeState extends State<Uppgrade> {
         color: uppgrade.couleur.withOpacity(0.85),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
+          const BoxShadow(
             color: Colors.black26,
             blurRadius: 8,
             offset: Offset(0, 4),
           ),
         ],
       ),
+      
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
