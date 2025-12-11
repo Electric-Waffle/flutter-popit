@@ -13,7 +13,7 @@ class PlayerDatabaseHelper extends DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         vie_base FLOAT,
         point INT,
-        niveau_shop_vie INT
+        niveau_uppgrades TEXT
       );
     ''');
     // ICI
@@ -30,18 +30,17 @@ class PlayerDatabaseHelper extends DatabaseHelper {
     final result = db.select('SELECT * FROM player');
 
     List<Player> resultInList = result
-        .map((row) => Player(
+        .map((row) => Player.fromDatabase(
               row['id'] as int,
               row['vie_base'] as double,
               row['point'] as int,
-              row['niveau_shop_vie'] as int,
+              row['niveau_uppgrades'] as String,
             ))
-            //ICI
         .toList();
 
     if (resultInList.isEmpty) {
       db.execute('''
-        INSERT INTO player(vie_base, point, niveau_shop_vie) values (10.0, 0, 0)
+        INSERT INTO player(vie_base, point, niveau_uppgrades) values (10.0, 0, '{}')
     ''');
     // ICI
     }
@@ -49,18 +48,18 @@ class PlayerDatabaseHelper extends DatabaseHelper {
 
   void saveData(Player joueur)
   {
-    db.execute('UPDATE player set vie_base = ? , point = ?, niveau_shop_vie = ? where id = ?', [joueur.getVieBase(), joueur.getPoint(), joueur.getNiveauShopVie(), joueur.getId()]);
+    db.execute('UPDATE player set vie_base = ? , point = ?, niveau_uppgrades = ? where id = ?', [joueur.getVieBase(), joueur.getPoint(), joueur.getNiveauUppgradesSerialise(), joueur.getId()]);
   }// ICI
 
   Player loadData()
   {
     final result = db.select('SELECT * FROM player');
 
-    return  Player(
+    return  Player.fromDatabase(
               result[0]['id'] as int,
               result[0]['vie_base'] as double,
               result[0]['point'] as int,
-              result[0]['niveau_shop_vie'] as int,
+              result[0]['niveau_uppgrades'] as String,
             );
   }// ICI
   

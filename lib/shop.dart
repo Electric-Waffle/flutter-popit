@@ -34,7 +34,7 @@ class _UppgradeState extends State<Uppgrade> {
   void recreeListeUppgrades()
   {
     this.uppgrades = [
-      ShopUppgrade(Colors.red, "Vie", "Gagne 10 points de vie par niveau", joueur.getNiveauShopVie(), 5, 15*joueur.getNiveauShopVie()),
+      ShopUppgrade(Colors.red, "Vie", "Gagne 10 points de vie par niveau", joueur.getLeNiveauDeUneUppgrade("Vie"), 5, 15*joueur.getLeNiveauDeUneUppgrade("Vie")),
     ];
   }
 

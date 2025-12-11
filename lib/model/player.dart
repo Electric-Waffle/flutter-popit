@@ -1,3 +1,6 @@
+import 'dart:convert';
+import './player_database_helper.dart';
+import 'package:flutter/foundation.dart';
 
 class Player {
 
@@ -8,11 +11,18 @@ class Player {
 
   late int _point;
 
-  late int _niveauShopVie;
+  late Map<String,int> _niveauUppgrades;
 
-  Player(int this._id, double this._vieBase, int this._point, this._niveauShopVie)
+  Player(int this._id, double this._vieBase, int this._point, this._niveauUppgrades)
   {
     this._vie = this._vieBase;
+  }
+
+  @factory
+  Player.fromDatabase(int this._id, double this._vieBase, int this._point, niveauUppgradesSerialise)
+  {
+    this._vie = this._vieBase;
+    setNiveauUppgradesSerialise(niveauUppgradesSerialise);
   }
 
   int getId()
@@ -34,9 +44,9 @@ class Player {
     return this._point;
   }
 
-  int getNiveauShopVie()
+  Map<String,int> getNiveauUppgrades()
   {
-    return this._niveauShopVie;
+    return this._niveauUppgrades;
   }
 
   void setId(int id)
@@ -59,9 +69,14 @@ class Player {
     this._point = point;
   }
 
-  void setNiveauShopVie (int unNiveau)
+  void setNiveauUppgrades (Map<String,int> niveauUppgrades)
   {
-    this._niveauShopVie = unNiveau;
+    this._niveauUppgrades = niveauUppgrades;
+  }
+
+  void setNouvelleUppgrade (String nouvelleUppgrade)
+  {
+    this._niveauUppgrades[nouvelleUppgrade] = 0;
   }
 
   void doDamage(int damage)
@@ -79,15 +94,46 @@ class Player {
     setPoint( getPoint() - cost );
   }
 
+  void setLeNiveauDeUneUppgrade (String uppgrade, int niveauUppgrade)
+  {
+    this._niveauUppgrades[uppgrade] = niveauUppgrade;
+  }
+
+  int getLeNiveauDeUneUppgrade (String uppgrade)
+  {
+    if (_niveauUppgrades[uppgrade] == null) {
+      createNouvelUppgradePourJoueur(uppgrade);
+    }
+    return _niveauUppgrades[uppgrade] ?? 0;
+  }
+
+  void createNouvelUppgradePourJoueur(String nomDeUppgrade)
+  {
+    setNouvelleUppgrade(nomDeUppgrade);
+    PlayerDatabaseHelper.saveData(this);
+  }
+
+  String getNiveauUppgradesSerialise ()
+  {
+    return jsonEncode(getNiveauUppgrades());
+  }
+
+  void setNiveauUppgradesSerialise (String niveauUppgradesSerialise)
+  {
+    Map<String, dynamic> niveauUppgradesDeserialise = jsonDecode(niveauUppgradesSerialise);
+    setNiveauUppgrades(niveauUppgradesDeserialise.map((key, value) => MapEntry(key, value as int)));
+  }
+
   void doUppgradeShop(String uppgrade, int cost)
   {
-    doBuyUppgrade(cost);
 
+    doBuyUppgrade(cost);
+    setLeNiveauDeUneUppgrade(uppgrade, getLeNiveauDeUneUppgrade(uppgrade)+1);
+
+  // Les effets de l'uppgrade, si il faut.
     switch (uppgrade) {
 
       case "Vie":
-
-        setNiveauShopVie(getNiveauShopVie()+1);
         setVieBase(getVieBase()+10);
         break;
 
