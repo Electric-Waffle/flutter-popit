@@ -56,12 +56,18 @@ class _JeuState extends State<Jeu> with RouteAware {
   {
     if (isBubbleList[index] != 0 && joueur.isAlive()) {
       joueur.doGivePoints(isBubbleList[index]);
+      joueur.incrementCombo();
+      if (isBubbleList[index] == 1)
+      {
+        joueur.activeUppgradeFaucheuse();
+      }
       setState(() {
         //print("yep $index : ${isBubbleList[index]}");
         isBubbleList[index] = isBubbleList[index]-1;
       });
     }
     else if (isBubbleList[index] == 0 && joueur.isAlive()) {
+      joueur.resetCombo();
       setState(() {
         //print("nope $index : ${isBubbleList[index]}");
         joueur.doDamage(1);
@@ -213,10 +219,14 @@ class _JeuState extends State<Jeu> with RouteAware {
     bubbleChangeTimer?.cancel();
 
     bubbleChangeTimer = Timer.periodic(Duration(milliseconds: intervalMillisecond), (Timer timer) {
+
+      doUppgradeEffectBeforeDamage();
+
       // Exemple : ton code de génération de bulle
-      joueur.doDamage(countBubbles());
+      joueur.doDamage(countBubbles().toDouble());
 
       setState(() {
+        doUppgradeEffectAfterDamage();
         final random = Random();
         final randomIndex = random.nextInt(widget.gridSize * widget.gridSize);
         isBubbleList[randomIndex] = random.nextInt(difficulty) + 1;
@@ -274,12 +284,47 @@ class _JeuState extends State<Jeu> with RouteAware {
           startBubbleTimer(500); // idem
         }
 
+        int ankh = joueur.getRevive();
         if (!joueur.isAlive()) {
           joueur.setVie(0);
+          if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) {
+            joueur.cashoutCombo();
+          }
+          if (joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
+          {
+            supernova();
+          }
           bubbleChangeTimer?.cancel();
+        }
+        if (ankh!= joueur.getRevive() && joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
+        {
+          supernova();
         }
       });
     });
+  }
+
+  supernova()
+  {
+    joueur.doGivePoints(countSumBubbles() * 3);
+
+    isBubbleList =
+        List.generate(widget.gridSize * widget.gridSize, (index) => 0);
+    
+  }
+
+  int countSumBubbles() {
+    return isBubbleList.fold(0, (acc, item) => (((item * (item+1)) / 2).toInt()) + acc);
+  }
+
+  void doUppgradeEffectBeforeDamage() {
+  }
+
+  void doUppgradeEffectAfterDamage() {
+
+    // Regénération
+    joueur.giveVie(joueur.getLeNiveauDeUneUppgrade("Regénération")*0.1);
+    
   }
 
   int countBubbles() {
@@ -312,7 +357,7 @@ class _JeuState extends State<Jeu> with RouteAware {
           title: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(joueur.getVie().toString()),
+              Text(joueur.getVie().toStringAsFixed(1)),
               const Icon(Icons.favorite),
               Container(
                 width: 50,
@@ -322,6 +367,19 @@ class _JeuState extends State<Jeu> with RouteAware {
               Container(
                 width: 50,
               ),
+              if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) ...{
+                Text("${joueur.getCombo().toString()} / ${joueur.getComboMax().toString()}"),
+                const Icon(Icons.whatshot),
+                Container(
+                  width: 50,
+                ),
+              },
+              if (joueur.getRevive() > 0) ...{
+                const Icon(Icons.add_location),
+                Container(
+                  width: 50,
+                ),
+              }
             ],
           ),
           

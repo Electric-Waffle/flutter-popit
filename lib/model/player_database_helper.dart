@@ -16,7 +16,6 @@ class PlayerDatabaseHelper extends DatabaseHelper {
         niveau_uppgrades TEXT
       );
     ''');
-    // ICI
   }
 
   @override
@@ -42,14 +41,13 @@ class PlayerDatabaseHelper extends DatabaseHelper {
       db.execute('''
         INSERT INTO player(vie_base, point, niveau_uppgrades) values (10.0, 0, '{}')
     ''');
-    // ICI
     }
   }
 
   void saveData(Player joueur)
   {
     db.execute('UPDATE player set vie_base = ? , point = ?, niveau_uppgrades = ? where id = ?', [joueur.getVieBase(), joueur.getPoint(), joueur.getNiveauUppgradesSerialise(), joueur.getId()]);
-  }// ICI
+  }
 
   Player loadData()
   {
@@ -61,6 +59,6 @@ class PlayerDatabaseHelper extends DatabaseHelper {
               result[0]['point'] as int,
               result[0]['niveau_uppgrades'] as String,
             );
-  }// ICI
+  }
   
 }

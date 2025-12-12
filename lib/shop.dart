@@ -33,9 +33,59 @@ class _UppgradeState extends State<Uppgrade> {
 
   void recreeListeUppgrades()
   {
+
     this.uppgrades = [
-      ShopUppgrade(Colors.red, "Vie", "Gagne 10 points de vie par niveau", joueur.getLeNiveauDeUneUppgrade("Vie"), 5, 15*joueur.getLeNiveauDeUneUppgrade("Vie")),
+      ShopUppgrade(Colors.red, "Vie", "Gagne 10 points de vie par niveau", recupereNiveauUppgradeDuJoueurOuLeCree("Vie"), 5, getPrixFromNiveauJoueur([10, 20, 30, 40, 50], joueur.getLeNiveauDeUneUppgrade("Vie"))),
+      ShopUppgrade(Colors.pink, "Regénération", "Regenere 0.1 points de vie/seconde par niveau", recupereNiveauUppgradeDuJoueurOuLeCree("Regénération"), 10, getPrixFromNiveauJoueur([25, 45, 65, 85, 105, 125, 145, 165, 185, 205], joueur.getLeNiveauDeUneUppgrade("Regénération"))),
+      ShopUppgrade(Colors.blueGrey, "Armure", "Réduit les dégats reçus de 1% par niveau", recupereNiveauUppgradeDuJoueurOuLeCree("Armure"), 10, getPrixFromNiveauJoueur([50, 75, 100, 150, 175, 200, 250, 275, 300, 500], joueur.getLeNiveauDeUneUppgrade("Armure"))),
+      ShopUppgrade(Colors.yellow.shade900, "Patte de Lapin", "Augmente de 1% les chances de doubler les gains d'un clic", recupereNiveauUppgradeDuJoueurOuLeCree("Patte de Lapin"), 25, getPrixFromNiveauJoueur([100, 125, 150, 175, 200, 225, 250, 275, 300, 325, 350, 375, 400, 425, 450, 475, 500, 525, 550, 575, 600, 625, 650, 675, 700], joueur.getLeNiveauDeUneUppgrade("Patte de Lapin"))),
+      ShopUppgrade(Colors.cyan.shade900, "Investissement", "Augmente les gains d'un clic de 1", recupereNiveauUppgradeDuJoueurOuLeCree("Investissement"), 1, getPrixFromNiveauJoueur([500], joueur.getLeNiveauDeUneUppgrade("Investissement"))),
+      ShopUppgrade(Colors.indigo.shade900, "Destockage", "Récupère de nouvelles améliorations pour le shop", recupereNiveauUppgradeDuJoueurOuLeCree("Destockage"), 1, getPrixFromNiveauJoueur([1000], joueur.getLeNiveauDeUneUppgrade("Destockage"))),
     ];
+
+    if (joueur.getLeNiveauDeUneUppgrade("Destockage") > 0)
+    {
+      this.uppgrades.addAll(
+        [
+          ShopUppgrade(Colors.lightGreen.shade900, "Dernier profit", "Débloque le combot. A la fin d'une partie, gagne comboMax*niveau bloon.", recupereNiveauUppgradeDuJoueurOuLeCree("Dernier profit"), 3, getPrixFromNiveauJoueur([1000, 2500, 5000], joueur.getLeNiveauDeUneUppgrade("Dernier profit"))),
+          ShopUppgrade(Colors.redAccent.shade700, "Faucheuse", "Augmente de 2%/niveau les chances de soigner 1 point de vie en éclatant un ballon rouge", recupereNiveauUppgradeDuJoueurOuLeCree("Faucheuse"), 5, getPrixFromNiveauJoueur([500, 1000, 1500, 2000, 2500], joueur.getLeNiveauDeUneUppgrade("Faucheuse"))),
+          ShopUppgrade(Colors.deepOrange.shade900, "Soleil", "Quand vie>90%, les gains de clic sont augmentés de 1/niveau", recupereNiveauUppgradeDuJoueurOuLeCree("Soleil"), 5, getPrixFromNiveauJoueur([300, 900, 1200, 1500, 2000], joueur.getLeNiveauDeUneUppgrade("Soleil"))),
+          ShopUppgrade(const Color.fromARGB(255, 225, 169, 0), "Ankh", "Quand la vie arrive a zéro, une seule fois, regagne des pv égaux au comboMax", recupereNiveauUppgradeDuJoueurOuLeCree("Ankh"), 1, getPrixFromNiveauJoueur([5000], joueur.getLeNiveauDeUneUppgrade("Ankh"))),
+          ShopUppgrade(Colors.lightBlue.shade900, "Supernova", "Quand la vie arrive a zéro, élimine tout les bloons sur le terrain et donne 3 fois leur valeur basique", recupereNiveauUppgradeDuJoueurOuLeCree("Supernova"), 1, getPrixFromNiveauJoueur([2500], joueur.getLeNiveauDeUneUppgrade("Supernova"))),
+          ShopUppgrade(Colors.indigo.shade900, "Tombée de Camion", "\"\"Récupère\"\" de nouvelles améliorations pour le shop", recupereNiveauUppgradeDuJoueurOuLeCree("Tombée de Camion"), 1, getPrixFromNiveauJoueur([20000], joueur.getLeNiveauDeUneUppgrade("Tombée de Camion"))),
+        ]
+      );
+    }
+
+    if (joueur.getLeNiveauDeUneUppgrade("Tombée de Camion") > 0)
+    {
+      this.uppgrades.addAll(
+        [
+          ShopUppgrade(Colors.indigoAccent.shade700, "Lune", "Quand vie<10%, les gains de clic sont augmentés de 2/niveau", recupereNiveauUppgradeDuJoueurOuLeCree("Lune"), 5, getPrixFromNiveauJoueur([300, 900, 1200, 1500, 2000], joueur.getLeNiveauDeUneUppgrade("Lune"))),
+        ]
+      );
+    }
+  }     
+
+  int getPrixFromNiveauJoueur(List<int> paliers, int niveau)
+  {
+    if (niveau >= paliers.length)
+    {
+      return 0;
+    }
+    return paliers[niveau];
+  }
+
+  int recupereNiveauUppgradeDuJoueurOuLeCree(String uppgrade)
+  {
+    // si l'uppgrade en question n'existe pas dans le joueur , on la cree et on la sauvegarde
+    if (!joueur.isUppgradeDansJoueur(uppgrade))
+    {
+      joueur.setLeNiveauDeUneUppgrade(uppgrade, 0);
+      sauvegarde.saveData(joueur);
+    }
+
+    return joueur.getLeNiveauDeUneUppgrade(uppgrade);
   }
 
   void acheteUppgrade(ShopUppgrade uppgradeAAcheter){
