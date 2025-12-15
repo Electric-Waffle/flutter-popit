@@ -29,10 +29,15 @@ class _JeuState extends State<Jeu> with RouteAware {
   // Liste pour suivre si une bulle doit être affichée pour chaque case.
   late List<int> isBubbleList;
 
+  bool timeStop = false ;
+
   int difficulty = 1;
 
   // Timer pour déclencher les nouvelles bulles.
   late Timer bubbleChangeTimer = Timer(Duration.zero, () {});
+
+  late Timer hourglassStopTimer = Timer(Duration.zero, () {});
+
 
   final RouteObserver<ModalRoute> routeObserver = RouteObserver<ModalRoute>();
 
@@ -67,11 +72,14 @@ class _JeuState extends State<Jeu> with RouteAware {
       });
     }
     else if (isBubbleList[index] == 0 && joueur.isAlive()) {
-      joueur.resetCombo();
-      setState(() {
-        //print("nope $index : ${isBubbleList[index]}");
-        joueur.doDamage(1);
-      });
+      if (joueur.evenementAleatoire(joueur.getLeNiveauDeUneUppgrade("Chance Liquide")*10))
+      {
+        joueur.resetCombo();
+        setState(() {
+          //print("nope $index : ${isBubbleList[index]}");
+          joueur.doDamage(1);
+        });
+      }
     }
   }
 
@@ -220,86 +228,115 @@ class _JeuState extends State<Jeu> with RouteAware {
 
     bubbleChangeTimer = Timer.periodic(Duration(milliseconds: intervalMillisecond), (Timer timer) {
 
-      doUppgradeEffectBeforeDamage();
+      if (this.timeStop == false)
+      {
+        doUppgradeEffectBeforeDamage();
 
-      // Exemple : ton code de génération de bulle
-      joueur.doDamage(countBubbles().toDouble());
+        // Exemple : ton code de génération de bulle
+        joueur.doDamage(countBubbles().toDouble());
 
-      setState(() {
-        doUppgradeEffectAfterDamage();
-        final random = Random();
-        final randomIndex = random.nextInt(widget.gridSize * widget.gridSize);
-        isBubbleList[randomIndex] = random.nextInt(difficulty) + 1;
-        temps += 1;
+        setState(() {
+          doUppgradeEffectAfterDamage();
+          final random = Random();
+          final randomIndex = random.nextInt(widget.gridSize * widget.gridSize);
+          isBubbleList[randomIndex] = random.nextInt(difficulty) + 1;
+          temps += 1;
 
-        // Changement de durée
-        switch (temps) {
+          // Changement de durée
+          switch (temps) {
 
-          case 10:
-            startBubbleTimer(900); 
-            break;
+            case 10:
+              startBubbleTimer(900); 
+              break;
 
-          case 30:
-            startBubbleTimer(800);
-            difficulty = 2;
-            break;
+            case 30:
+              startBubbleTimer(800);
+              difficulty = 2;
+              break;
 
-          case 70:
-            startBubbleTimer(700); 
-            difficulty = 3;
-            break;
+            case 70:
+              startBubbleTimer(700); 
+              difficulty = 3;
+              break;
 
-          case 160:
-            startBubbleTimer(600);
-            difficulty = 4;
-            break;
+            case 160:
+              startBubbleTimer(600);
+              difficulty = 4;
+              break;
 
-          case 360:
-            startBubbleTimer(500); 
-            difficulty = 5;
-            break;
+            case 360:
+              startBubbleTimer(500); 
+              difficulty = 5;
+              break;
 
-          case 460:
-            startBubbleTimer(450); 
-            difficulty = 6;
-            break;
+            case 460:
+              startBubbleTimer(450); 
+              difficulty = 6;
+              break;
 
-          case 560:
-            startBubbleTimer(400);
-            difficulty = 7;
-            break;
+            case 560:
+              startBubbleTimer(400);
+              difficulty = 7;
+              break;
 
-          case 660:
-            startBubbleTimer(350); 
-            break;
+            case 660:
+              startBubbleTimer(350); 
+              break;
 
-          case 860:
-            startBubbleTimer(300); 
-            break;
+            case 860:
+              startBubbleTimer(300); 
+              break;
 
-          default:
-        }
-        if (temps == 5) {
-        } else if (temps == 20) {
-          startBubbleTimer(500); // idem
-        }
-
-        int ankh = joueur.getRevive();
-        if (!joueur.isAlive()) {
-          joueur.setVie(0);
-          if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) {
-            joueur.cashoutCombo();
+            default:
           }
-          if (joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
+
+          int ankh = joueur.getRevive();
+          if (!joueur.isAlive()) {
+            joueur.setVie(0);
+            if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) {
+              joueur.cashoutCombo();
+            }
+            if (joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
+            {
+              supernova();
+            }
+            bubbleChangeTimer?.cancel();
+          }
+          if (ankh!= joueur.getRevive() && joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
           {
             supernova();
           }
-          bubbleChangeTimer?.cancel();
+        });
+      }
+      
+    });
+  }
+
+  // Méthode pour démarrer le timer du stop du sablier.
+  void stopTimeWithHourglass() {
+  // Annule l'ancien timer s'il existe
+    setState(() {
+      joueur.setSablier(joueur.getSablier()-1);
+      this.timeStop = true;
+    });
+
+    
+    int tempsStop = 0;
+
+    hourglassStopTimer = Timer.periodic(const Duration(milliseconds: 1000), (Timer timer) {
+
+      doUppgradeEffectBeforeDamage();
+
+      setState(() {
+        doUppgradeEffectAfterDamage();
+
+        tempsStop += 1;
+
+        if (tempsStop == 4) {
+          this.timeStop = false;
+          hourglassStopTimer?.cancel();
         }
-        if (ankh!= joueur.getRevive() && joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
-        {
-          supernova();
-        }
+
       });
     });
   }
@@ -324,6 +361,9 @@ class _JeuState extends State<Jeu> with RouteAware {
 
     // Regénération
     joueur.giveVie(joueur.getLeNiveauDeUneUppgrade("Regénération")*0.1);
+
+    // Cyber-Regénération
+    joueur.giveVie(joueur.getLeNiveauDeUneUppgrade("Cyber-Regénération")*0.5);
     
   }
 
@@ -359,29 +399,54 @@ class _JeuState extends State<Jeu> with RouteAware {
             children: [
               Text(joueur.getVie().toStringAsFixed(1)),
               const Icon(Icons.favorite),
-              Container(
-                width: 50,
-              ),
+              const SizedBox(width: 50),
+
               Text(joueur.getPoint().toString()),
               const Icon(Icons.bubble_chart),
-              Container(
-                width: 50,
-              ),
-              if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) ...{
-                Text("${joueur.getCombo().toString()} / ${joueur.getComboMax().toString()}"),
+              const SizedBox(width: 50),
+
+              if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) ...[
+                Text("${joueur.getCombo()} / ${joueur.getComboMax()}"),
                 const Icon(Icons.whatshot),
-                Container(
-                  width: 50,
-                ),
-              },
-              if (joueur.getRevive() > 0) ...{
+                const SizedBox(width: 50),
+              ],
+
+              if (joueur.getRevive() > 0) ...[
                 const Icon(Icons.add_location),
-                Container(
-                  width: 50,
+                const SizedBox(width: 50),
+              ],
+
+              if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
+                  joueur.getSablier() > 0 &&
+                  timeStop == false) ...[
+                ElevatedButton.icon(
+                  onPressed: () => stopTimeWithHourglass(),
+                  icon: const Icon(Icons.hourglass_empty),
+                  label: Text(joueur.getSablier().toString()),
                 ),
-              }
+                const SizedBox(width: 50),
+              ]
+              else if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
+                  joueur.getSablier() > 0 &&
+                  timeStop == true) ...[
+                ElevatedButton.icon(
+                  onPressed: null,
+                  icon: const Icon(Icons.hourglass_full),
+                  label: Text(joueur.getSablier().toString()),
+                ),
+                const SizedBox(width: 50),
+              ]
+              else if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
+                  joueur.getSablier() == 0) ...[
+                const ElevatedButton(
+                  onPressed: null,
+                  child: Icon(Icons.hourglass_disabled),
+                ),
+                const SizedBox(width: 50),
+              ],
             ],
           ),
+
           
           leading: Row(
             mainAxisAlignment: MainAxisAlignment.center,

@@ -14,6 +14,8 @@ class Player {
 
   late int _revive;
 
+  late int _sablier;
+
   late int _point;
 
   late Map<String,int> _niveauUppgrades;
@@ -24,6 +26,7 @@ class Player {
     this._combo = 0;
     this._comboMax = 0;
     this._revive = 0;
+    this._sablier = 0;
   }
 
   @factory
@@ -34,11 +37,17 @@ class Player {
     this._comboMax = 0;
     setNiveauUppgradesSerialise(niveauUppgradesSerialise);
     this._revive = getLeNiveauDeUneUppgrade("Ankh");
+    this._sablier = getLeNiveauDeUneUppgrade("Sablier Fantome");
   }
 
   int getRevive ()
   {
     return this._revive;
+  }
+
+  int getSablier ()
+  {
+    return this._sablier;
   }
 
   int getCombo()
@@ -73,6 +82,11 @@ class Player {
   Map<String,int> getNiveauUppgrades()
   {
     return this._niveauUppgrades;
+  }
+
+  void setSablier (int sablier)
+  {
+    this._sablier = sablier;
   }
 
   void setRevive (int revive)
@@ -149,7 +163,7 @@ class Player {
 
   void doDamage(double damage)
   {
-    double reductionDegat = (getLeNiveauDeUneUppgrade("Armure") / 100) * damage;
+    double reductionDegat = ((getLeNiveauDeUneUppgrade("Armure") + getLeNiveauDeUneUppgrade("Cyber-Armure")) / 100) * damage;
     double damageFinal = damage - reductionDegat;
     setVie( getVie() - (damageFinal) );
   }
@@ -159,14 +173,39 @@ class Player {
 
     points += getLeNiveauDeUneUppgrade("Investissement");
 
+    points += getLeNiveauDeUneUppgrade("Cyber-Investissement") * 10;
+
+
     if (getVie() > getVieBase()*0.9)
     {
       points += getLeNiveauDeUneUppgrade("Soleil");
     }
 
+    if (getVie() < getVieBase()*0.1)
+    {
+      points += getLeNiveauDeUneUppgrade("Lune")*3;
+    }
+
+    if (getVie() < getVieBase()*0.1)
+    {
+      points += getLeNiveauDeUneUppgrade("Lune")*3;
+    }
+
+    if (getVieBase()*0.4 < getVie() && getVie() < getVieBase()*0.6)
+    {
+      points += getLeNiveauDeUneUppgrade("Cyber-Espace")*2;
+    }
+
     if (evenementAleatoire(getLeNiveauDeUneUppgrade("Patte de Lapin").toDouble()))
     {
       points += points;
+    }
+    else
+    {
+      if (getLeNiveauDeUneUppgrade("Cyber-Patte de Lapin") > 0 && evenementAleatoire(getLeNiveauDeUneUppgrade("Patte de Lapin").toDouble()))
+      {
+        points += points;
+      }
     }
 
     setPoint( getPoint() + points );
@@ -214,6 +253,10 @@ class Player {
 
       case "Vie":
         setVieBase(getVieBase()+10);
+        break;
+
+      case "Cyber-Vie":
+        setVieBase(getVieBase()+20);
         break;
 
       default:
