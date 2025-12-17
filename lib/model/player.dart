@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import './golden_time_uppgrade.dart';
 import 'dart:math';
 
 class Player {
@@ -20,6 +21,8 @@ class Player {
 
   late Map<String,int> _niveauUppgrades;
 
+  late GoldenTimeUppgrade _goldenTimeUppgrade;
+
   Player(int this._id, double this._vieBase, int this._point, this._niveauUppgrades)
   {
     this._vie = this._vieBase;
@@ -27,6 +30,7 @@ class Player {
     this._comboMax = 0;
     this._revive = 0;
     this._sablier = 0;
+    this._goldenTimeUppgrade = GoldenTimeUppgrade(false, 5, 50);
   }
 
   @factory
@@ -38,6 +42,7 @@ class Player {
     setNiveauUppgradesSerialise(niveauUppgradesSerialise);
     this._revive = getLeNiveauDeUneUppgrade("Ankh");
     this._sablier = getLeNiveauDeUneUppgrade("Sablier Fantome");
+    this._goldenTimeUppgrade = GoldenTimeUppgrade((getLeNiveauDeUneUppgrade("Penny")>0), 5, 50 - (getLeNiveauDeUneUppgrade("Penny")*2));
   }
 
   int getRevive ()
@@ -166,6 +171,11 @@ class Player {
     double reductionDegat = ((getLeNiveauDeUneUppgrade("Armure") + getLeNiveauDeUneUppgrade("Cyber-Armure")) / 100) * damage;
     double damageFinal = damage - reductionDegat;
     setVie( getVie() - (damageFinal) );
+  }
+
+  void doGivePointsSansUppgrades(int points)
+  {
+    setPoint( getPoint() + points );
   }
 
   void doGivePoints(int points)

@@ -364,6 +364,12 @@ class _JeuState extends State<Jeu> with RouteAware {
 
     // Cyber-Regénération
     joueur.giveVie(joueur.getLeNiveauDeUneUppgrade("Cyber-Regénération")*0.5);
+
+    // Dividendes
+    joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Dividendes"));
+
+    // Cyber-Dividendes
+    joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Cyber-Dividendes"));
     
   }
 
