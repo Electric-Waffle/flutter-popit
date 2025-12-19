@@ -21,7 +21,7 @@ class Player {
 
   late Map<String,int> _niveauUppgrades;
 
-  late GoldenTimeUppgrade _goldenTimeUppgrade;
+  late GoldenTimeUppgrade goldenTimeUppgrade;
 
   Player(int this._id, double this._vieBase, int this._point, this._niveauUppgrades)
   {
@@ -30,7 +30,7 @@ class Player {
     this._comboMax = 0;
     this._revive = 0;
     this._sablier = 0;
-    this._goldenTimeUppgrade = GoldenTimeUppgrade(false, 5, 50);
+    this.goldenTimeUppgrade = GoldenTimeUppgrade(false, 5, 50);
   }
 
   @factory
@@ -42,7 +42,7 @@ class Player {
     setNiveauUppgradesSerialise(niveauUppgradesSerialise);
     this._revive = getLeNiveauDeUneUppgrade("Ankh");
     this._sablier = getLeNiveauDeUneUppgrade("Sablier Fantome");
-    this._goldenTimeUppgrade = GoldenTimeUppgrade((getLeNiveauDeUneUppgrade("Penny")>0), 5, 50 - (getLeNiveauDeUneUppgrade("Penny")*2));
+    this.goldenTimeUppgrade = GoldenTimeUppgrade((getLeNiveauDeUneUppgrade("Penny")>0), 5, 50 - (getLeNiveauDeUneUppgrade("Penny")*2));
   }
 
   int getRevive ()
@@ -188,17 +188,12 @@ class Player {
 
     if (getVie() > getVieBase()*0.9)
     {
-      points += getLeNiveauDeUneUppgrade("Soleil");
+      points += getLeNiveauDeUneUppgrade("Soleil") * getLeNiveauDeUneUppgrade("Couronne");
     }
 
     if (getVie() < getVieBase()*0.1)
     {
-      points += getLeNiveauDeUneUppgrade("Lune")*3;
-    }
-
-    if (getVie() < getVieBase()*0.1)
-    {
-      points += getLeNiveauDeUneUppgrade("Lune")*3;
+      points += getLeNiveauDeUneUppgrade("Lune") * 3 * getLeNiveauDeUneUppgrade("Ongle de Saphir");
     }
 
     if (getVieBase()*0.4 < getVie() && getVie() < getVieBase()*0.6)
@@ -216,6 +211,18 @@ class Player {
       {
         points += points;
       }
+    }
+
+    if (this.goldenTimeUppgrade.etat == "Utilisation") {
+      points += points;
+      if (evenementAleatoire(getLeNiveauDeUneUppgrade("Carter")*25)){
+        points += points;
+      }
+    }
+
+    if (evenementAleatoire(getLeNiveauDeUneUppgrade("Bétile de Delphes").toDouble()))
+    {
+      points += 5 * points;
     }
 
     setPoint( getPoint() + points );

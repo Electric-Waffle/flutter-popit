@@ -29,6 +29,8 @@ class _JeuState extends State<Jeu> with RouteAware {
   // Liste pour suivre si une bulle doit être affichée pour chaque case.
   late List<int> isBubbleList;
 
+  final aleatoire = Random();
+
   bool timeStop = false ;
 
   int difficulty = 1;
@@ -38,6 +40,7 @@ class _JeuState extends State<Jeu> with RouteAware {
 
   late Timer hourglassStopTimer = Timer(Duration.zero, () {});
 
+  late Timer oneSecondTimer = Timer(Duration.zero, () {});
 
   final RouteObserver<ModalRoute> routeObserver = RouteObserver<ModalRoute>();
 
@@ -55,6 +58,7 @@ class _JeuState extends State<Jeu> with RouteAware {
   void didPopNext() {
     // La page redevient visible, on peut relancer le timer
     startBubbleTimer(1000);
+    startOneSecondTimer(1000);
   }
 
   void popBubble(int index)
@@ -66,17 +70,18 @@ class _JeuState extends State<Jeu> with RouteAware {
       {
         joueur.activeUppgradeFaucheuse();
       }
-      setState(() {
-        //print("yep $index : ${isBubbleList[index]}");
-        isBubbleList[index] = isBubbleList[index]-1;
-      });
+      
+      if (joueur.goldenTimeUppgrade.etat != "Utilisation") {
+        setState(() {
+          isBubbleList[index] = isBubbleList[index]-1;
+        });
+      }
     }
     else if (isBubbleList[index] == 0 && joueur.isAlive()) {
-      if (joueur.evenementAleatoire(joueur.getLeNiveauDeUneUppgrade("Chance Liquide")*10))
+      if (joueur.evenementAleatoire(100 - (joueur.getLeNiveauDeUneUppgrade("Chance Liquide")*10)))
       {
         joueur.resetCombo();
         setState(() {
-          //print("nope $index : ${isBubbleList[index]}");
           joueur.doDamage(1);
         });
       }
@@ -219,6 +224,8 @@ class _JeuState extends State<Jeu> with RouteAware {
 
     // Démarrer le timer pour les changements de couleur.
     startBubbleTimer(1000);
+    startOneSecondTimer(1000);
+
   }
 
   // Méthode pour démarrer le timer des bulles.
@@ -235,77 +242,128 @@ class _JeuState extends State<Jeu> with RouteAware {
         // Exemple : ton code de génération de bulle
         joueur.doDamage(countBubbles().toDouble());
 
-        setState(() {
-          doUppgradeEffectAfterDamage();
-          final random = Random();
-          final randomIndex = random.nextInt(widget.gridSize * widget.gridSize);
-          isBubbleList[randomIndex] = random.nextInt(difficulty) + 1;
-          temps += 1;
+        // Vérifie si le widget est toujours monté avant d'appeler setState
+        if (mounted) {
+          setState(() {
+            doUppgradeEffectAfterDamage();
+            final random = Random();
 
-          // Changement de durée
-          switch (temps) {
-
-            case 10:
-              startBubbleTimer(900); 
-              break;
-
-            case 30:
-              startBubbleTimer(800);
-              difficulty = 2;
-              break;
-
-            case 70:
-              startBubbleTimer(700); 
-              difficulty = 3;
-              break;
-
-            case 160:
-              startBubbleTimer(600);
-              difficulty = 4;
-              break;
-
-            case 360:
-              startBubbleTimer(500); 
-              difficulty = 5;
-              break;
-
-            case 460:
-              startBubbleTimer(450); 
-              difficulty = 6;
-              break;
-
-            case 560:
-              startBubbleTimer(400);
-              difficulty = 7;
-              break;
-
-            case 660:
-              startBubbleTimer(350); 
-              break;
-
-            case 860:
-              startBubbleTimer(300); 
-              break;
-
-            default:
-          }
-
-          int ankh = joueur.getRevive();
-          if (!joueur.isAlive()) {
-            joueur.setVie(0);
-            if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) {
-              joueur.cashoutCombo();
+            if (joueur.goldenTimeUppgrade.etat != "Utilisation") {
+              final randomIndex = random.nextInt(widget.gridSize * widget.gridSize);
+              isBubbleList[randomIndex] = random.nextInt(difficulty) + 1;
             }
-            if (joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
+            
+            temps += 1;
+
+            // Changement de durée
+            switch (temps) {
+
+              case 10:
+                startBubbleTimer(900); 
+                break;
+
+              case 30:
+                startBubbleTimer(800);
+                difficulty = 2;
+                break;
+
+              case 70:
+                startBubbleTimer(700); 
+                difficulty = 3;
+                break;
+
+              case 160:
+                startBubbleTimer(600);
+                difficulty = 4;
+                break;
+
+              case 360:
+                startBubbleTimer(500); 
+                difficulty = 5;
+                break;
+
+              case 460:
+                startBubbleTimer(450); 
+                difficulty = 6;
+                break;
+
+              case 560:
+                startBubbleTimer(400);
+                difficulty = 7;
+                break;
+
+              case 660:
+                startBubbleTimer(350); 
+                break;
+
+              case 860:
+                startBubbleTimer(300); 
+                break;
+
+              default:
+            }
+
+            int ankh = joueur.getRevive();
+            if (!joueur.isAlive()) {
+              joueur.setVie(0);
+              if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) {
+                joueur.cashoutCombo();
+              }
+              if (joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
+              {
+                supernova();
+              }
+    
+              joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Argent de poche")*10);
+              joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Vide Grenier")*100);
+              joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Pension de Retraite")*250);
+              joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Cyber-Bitcoin")*(aleatoire.nextInt(1000) + 500));
+              
+              bubbleChangeTimer?.cancel();
+            }
+            if (ankh != joueur.getRevive() && joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
             {
               supernova();
             }
-            bubbleChangeTimer?.cancel();
+          });
+        }
+      }
+      
+    });
+  }
+
+  void doGoldenTime()
+  {
+    joueur.goldenTimeUppgrade.etat = "Utilisation";
+  }
+
+  // Méthode pour démarrer le timer des secondes.
+  void startOneSecondTimer(int intervalMillisecond) {
+  // Annule l'ancien timer s'il existe
+    oneSecondTimer?.cancel();
+
+    oneSecondTimer = Timer.periodic(Duration(milliseconds: intervalMillisecond), (Timer timer) {
+
+      // Vérifie si le widget est toujours monté avant d'appeler setState
+      if (mounted) {
+        setState(() {
+
+          if (joueur.goldenTimeUppgrade.etat == "Utilisation" && joueur.goldenTimeUppgrade.timer > 0) {
+            joueur.goldenTimeUppgrade.timer -= 1;
           }
-          if (ankh!= joueur.getRevive() && joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
-          {
-            supernova();
+          else if (joueur.goldenTimeUppgrade.etat == "Utilisation" && joueur.goldenTimeUppgrade.timer == 0) {
+            joueur.goldenTimeUppgrade.timer = joueur.goldenTimeUppgrade.timerMax;
+            joueur.goldenTimeUppgrade.etat = "Utilisé";
           }
+
+          if (joueur.goldenTimeUppgrade.etat == "Utilisé" && joueur.goldenTimeUppgrade.cooldown > 0) {
+            joueur.goldenTimeUppgrade.cooldown -= 1;
+          }
+          else if (joueur.goldenTimeUppgrade.etat == "Utilisé" && joueur.goldenTimeUppgrade.cooldown == 0) {
+            joueur.goldenTimeUppgrade.cooldown = joueur.goldenTimeUppgrade.cooldownMax;
+            joueur.goldenTimeUppgrade.etat = "Utilisable";
+          }
+
         });
       }
       
@@ -369,7 +427,7 @@ class _JeuState extends State<Jeu> with RouteAware {
     joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Dividendes"));
 
     // Cyber-Dividendes
-    joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Cyber-Dividendes"));
+    joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Cyber-Dividendes")*10);
     
   }
 
@@ -419,6 +477,35 @@ class _JeuState extends State<Jeu> with RouteAware {
 
               if (joueur.getRevive() > 0) ...[
                 const Icon(Icons.add_location),
+                const SizedBox(width: 50),
+              ],
+
+              if (joueur.goldenTimeUppgrade.etat != "Inexistant") ...[
+                if (joueur.goldenTimeUppgrade.etat == "Utilisable") 
+                  ElevatedButton.icon(
+                    onPressed: () => doGoldenTime(),
+                    label: const Icon(Icons.attach_money),
+                  ),
+
+                if (joueur.goldenTimeUppgrade.etat == "Utilisation") 
+                  ElevatedButton.icon(
+                    onPressed: null,
+                    label: const Icon(Icons.currency_exchange),
+                  ),
+
+                if (joueur.goldenTimeUppgrade.etat == "Utilisé") 
+                  ElevatedButton.icon(
+                    onPressed: null,
+                    label: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(Icons.money_off),
+                        CircularProgressIndicator(
+                          value: (joueur.goldenTimeUppgrade.getCooldownAdvancement()),
+                        )
+                      ],
+                    ),
+                  ),
                 const SizedBox(width: 50),
               ],
 
