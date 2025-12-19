@@ -1,5 +1,6 @@
 // Import de la bibliothèque pour gérer les temporisateurs (timers).
 import 'dart:async';
+import 'dart:developer' as developer;
 
 // Import de la bibliothèque pour générer des nombres aléatoires.
 import 'dart:math';
@@ -72,9 +73,10 @@ class _UppgradeState extends State<Uppgrade> {
   {
     await sauvegarde.openDatabase();
     this.joueur = await sauvegarde.loadData();
-    creeNiveauUppgradeSiExistePas();
+    await creeNiveauUppgradeSiExistePas();
     recreeListeUppgrades(); // <- ici, après que joueur est prêt
     setState(() {this.joueurCharge = true;}); // pour que l'UI se mette à jour avec le joueur chargé
+    developer.log("joueur est chargé ? $joueurCharge ", name: "ShopDebug");
   }
 
   void recreeListeUppgrades()

@@ -10,6 +10,7 @@ class LinuxContact implements DatabaseContact {
   Future<void> openDatabase() async {
     db = sqlite3.open('database.db');
     await createTables();
+    await createPlayer();
   }
 
   /// Ferme la base de données.
