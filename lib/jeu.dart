@@ -35,6 +35,8 @@ class _JeuState extends State<Jeu> with RouteAware {
 
   int difficulty = 1;
 
+  bool joueurCharge = false;
+
   // Timer pour déclencher les nouvelles bulles.
   late Timer bubbleChangeTimer = Timer(Duration.zero, () {});
 
@@ -46,7 +48,8 @@ class _JeuState extends State<Jeu> with RouteAware {
 
   int temps = 0;
 
-  Player joueur = PlayerDatabaseHelper().loadData();
+  PlayerDatabaseHelper sauvegarde = PlayerDatabaseHelper();
+  late Player joueur;
 
   @override
   void didChangeDependencies() {
@@ -222,10 +225,21 @@ class _JeuState extends State<Jeu> with RouteAware {
     isBubbleList =
         List.generate(widget.gridSize * widget.gridSize, (index) => 0);
 
+    // Récupérer le joueur
+    initJoueur();
+
     // Démarrer le timer pour les changements de couleur.
     startBubbleTimer(1000);
     startOneSecondTimer(1000);
 
+    // lancer l'affichage
+  }
+
+  void initJoueur() async
+  {
+    await this.sauvegarde.openDatabase();
+    this.joueur = await this.sauvegarde.loadData();
+    setState(() {this.joueurCharge = true;}); // pour que l'UI se mette à jour avec le joueur chargé
   }
 
   // Méthode pour démarrer le timer des bulles.
@@ -318,7 +332,7 @@ class _JeuState extends State<Jeu> with RouteAware {
               joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Vide Grenier")*100);
               joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Pension de Retraite")*250);
               joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Cyber-Bitcoin")*(aleatoire.nextInt(1000) + 500));
-              
+
               bubbleChangeTimer?.cancel();
             }
             if (ankh != joueur.getRevive() && joueur.getLeNiveauDeUneUppgrade("Supernova") > 0)
@@ -449,6 +463,10 @@ class _JeuState extends State<Jeu> with RouteAware {
     final totalHeight = widget.gridSize * widget.cellSize;
     final screenHeight = MediaQuery.of(context).size.height;
 
+    if (!this.joueurCharge) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return MaterialApp(
       navigatorObservers: [routeObserver],
 
@@ -548,7 +566,7 @@ class _JeuState extends State<Jeu> with RouteAware {
               IconButton(
                 icon: const Icon(Icons.shopping_cart),
                 onPressed: ()  {
-                  PlayerDatabaseHelper().saveData(joueur);
+                  sauvegarde.saveData(joueur);
                   Navigator.pop(context, true);
                 },
                 tooltip: "Quitter et retourner au Shop",

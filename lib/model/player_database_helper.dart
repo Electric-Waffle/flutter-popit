@@ -1,64 +1,46 @@
-import "dart:ffi";
+import "dart:io";
 
-import "./database_helper.dart";
+import "database_contact.dart";
+import "./linux_contact.dart";
 import "./player.dart";
 
-class PlayerDatabaseHelper extends DatabaseHelper {
+class PlayerDatabaseHelper {
 
-  @override
-  void createTables()
+  late final DatabaseContact _dbBackend;
+
+  PlayerDatabaseHelper()
   {
-    db.execute('''
-      CREATE TABLE IF NOT EXISTS player (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        vie_base FLOAT,
-        point INT,
-        niveau_uppgrades TEXT
-      );
-    ''');
-  }
-
-  @override
-  void openDatabase() {
-    super.openDatabase();
-    createPlayer();
-  }
-
-  void createPlayer() {
-
-    final result = db.select('SELECT * FROM player');
-
-    List<Player> resultInList = result
-        .map((row) => Player.fromDatabase(
-              row['id'] as int,
-              row['vie_base'] as double,
-              row['point'] as int,
-              row['niveau_uppgrades'] as String,
-            ))
-        .toList();
-
-    if (resultInList.isEmpty) {
-      db.execute('''
-        INSERT INTO player(vie_base, point, niveau_uppgrades) values (10.0, 0, '{}')
-    ''');
+    if (Platform.isLinux) {
+      this._dbBackend = LinuxContact();
+    } else {
+      throw UnsupportedError('Platforme non supportée');
     }
   }
 
-  void saveData(Player joueur)
+  Future<void> createTables() async
   {
-    db.execute('UPDATE player set vie_base = ? , point = ?, niveau_uppgrades = ? where id = ?', [joueur.getVieBase(), joueur.getPoint(), joueur.getNiveauUppgradesSerialise(), joueur.getId()]);
+    await _dbBackend.createTables();
   }
 
-  Player loadData()
+  Future<void> openDatabase() async 
   {
-    final result = db.select('SELECT * FROM player');
+    await _dbBackend.openDatabase();
+  }
 
-    return  Player.fromDatabase(
-              result[0]['id'] as int,
-              result[0]['vie_base'] as double,
-              result[0]['point'] as int,
-              result[0]['niveau_uppgrades'] as String,
-            );
+  Future<void> createPlayer() async 
+  {
+    await _dbBackend.createPlayer();
+  }
+
+  Future<void> saveData(Player joueur) async
+  {
+    await _dbBackend.saveData(joueur);
+  }
+
+  Future<Player> loadData() async
+  {
+    final Player player = await _dbBackend.loadData();
+    return player;
   }
   
 }
