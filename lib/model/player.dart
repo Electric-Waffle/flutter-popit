@@ -276,6 +276,10 @@ class Player {
         setVieBase(getVieBase()+20);
         break;
 
+      case "Pack de developpeur":
+        doGivePointsSansUppgrades(1000000);
+        break;
+
       default:
         break;
     }
@@ -304,6 +308,12 @@ class Player {
       giveVie(1.0);
     }
   }
+  void activeUppgradeAnneauOsiris()
+  {
+    if (evenementAleatoire(getLeNiveauDeUneUppgrade("Anneau d'Osiris").toDouble()*5)) {
+      reduitCooldownGoldenTime(1);
+    }
+  }
 
   void giveVie(double vie)
   {
@@ -316,6 +326,13 @@ class Player {
     if (getVie() > getVieBase())
     {
       setVie(getVieBase());
+    }
+  }
+
+  void reduitCooldownGoldenTime(double seconde)
+  {
+    if (this.goldenTimeUppgrade.etat == "Utilisé" && this.goldenTimeUppgrade.cooldown > 0) {
+      this.goldenTimeUppgrade.cooldown -= 1;
     }
   }
 

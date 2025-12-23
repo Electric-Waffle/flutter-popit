@@ -1,7 +1,8 @@
 import "dart:io";
 
 import "database_contact.dart";
-import "./linux_contact.dart";
+import "sqlite_contact.dart";
+import "sqflite_contact.dart";
 import "./player.dart";
 
 class PlayerDatabaseHelper {
@@ -10,10 +11,12 @@ class PlayerDatabaseHelper {
 
   PlayerDatabaseHelper()
   {
-    if (Platform.isLinux) {
-      this._dbBackend = LinuxContact();
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      _dbBackend = SqliteContact();
+    } else if (Platform.isAndroid || Platform.isIOS) {
+      _dbBackend = SqfliteContact();
     } else {
-      throw UnsupportedError('Platforme non supportée');
+      throw UnsupportedError('Plateforme non supportée');
     }
   }
 
@@ -24,7 +27,7 @@ class PlayerDatabaseHelper {
 
   Future<void> openDatabase() async 
   {
-    await _dbBackend.openDatabase();
+    await _dbBackend.openTheDatabase(); // insertion du The pour éviter les conflite avec d'autres méthodes openDatabase (notemment pour sqflite)
   }
 
   Future<void> createPlayer() async 

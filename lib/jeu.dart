@@ -73,6 +73,10 @@ class _JeuState extends State<Jeu> with RouteAware {
       {
         joueur.activeUppgradeFaucheuse();
       }
+      if (isBubbleList[index] == 2)
+      {
+        joueur.activeUppgradeAnneauOsiris();
+      }
       
       if (joueur.goldenTimeUppgrade.etat != "Utilisation") {
         setState(() {
@@ -481,80 +485,18 @@ class _JeuState extends State<Jeu> with RouteAware {
             children: [
               Text(joueur.getVie().toStringAsFixed(1)),
               const Icon(Icons.favorite),
-              const SizedBox(width: 50),
+              const SizedBox(width: 40),
 
               Text(joueur.getPoint().toString()),
               const Icon(Icons.bubble_chart),
-              const SizedBox(width: 50),
+              const SizedBox(width: 40),
 
               if (joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0) ...[
                 Text("${joueur.getCombo()} / ${joueur.getComboMax()}"),
                 const Icon(Icons.whatshot),
-                const SizedBox(width: 50),
               ],
 
-              if (joueur.getRevive() > 0) ...[
-                const Icon(Icons.add_location),
-                const SizedBox(width: 50),
-              ],
-
-              if (joueur.goldenTimeUppgrade.etat != "Inexistant") ...[
-                if (joueur.goldenTimeUppgrade.etat == "Utilisable") 
-                  ElevatedButton.icon(
-                    onPressed: () => doGoldenTime(),
-                    label: const Icon(Icons.attach_money),
-                  ),
-
-                if (joueur.goldenTimeUppgrade.etat == "Utilisation") 
-                  ElevatedButton.icon(
-                    onPressed: null,
-                    label: const Icon(Icons.currency_exchange),
-                  ),
-
-                if (joueur.goldenTimeUppgrade.etat == "Utilisé") 
-                  ElevatedButton.icon(
-                    onPressed: null,
-                    label: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        const Icon(Icons.money_off),
-                        CircularProgressIndicator(
-                          value: (joueur.goldenTimeUppgrade.getCooldownAdvancement()),
-                        )
-                      ],
-                    ),
-                  ),
-                const SizedBox(width: 50),
-              ],
-
-              if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
-                  joueur.getSablier() > 0 &&
-                  timeStop == false) ...[
-                ElevatedButton.icon(
-                  onPressed: () => stopTimeWithHourglass(),
-                  icon: const Icon(Icons.hourglass_empty),
-                  label: Text(joueur.getSablier().toString()),
-                ),
-                const SizedBox(width: 50),
-              ]
-              else if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
-                  joueur.getSablier() > 0 &&
-                  timeStop == true) ...[
-                ElevatedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.hourglass_full),
-                  label: Text(joueur.getSablier().toString()),
-                ),
-                const SizedBox(width: 50),
-              ]
-              else if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
-                  joueur.getSablier() == 0) ...[
-                const ElevatedButton(
-                  onPressed: null,
-                  child: Icon(Icons.hourglass_disabled),
-                ),
-                const SizedBox(width: 50),
-              ],
+              
             ],
           ),
 
@@ -600,7 +542,9 @@ class _JeuState extends State<Jeu> with RouteAware {
           ),
           ),
         ),
-      ),
+        bottomNavigationBar: SafeArea(child: buildAbilityBar()),
+
+      )
     );
   }
 
@@ -620,5 +564,100 @@ class _JeuState extends State<Jeu> with RouteAware {
       onTap: () => { popBubble(index) },
       child: buildBloon(isBubbleList[index]) 
     );
+  }
+
+  Widget buildAbilityBar() {
+
+    return Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 176, 204, 234)?.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+
+              if (joueur.goldenTimeUppgrade.etat != "Inexistant") ...[
+                if (joueur.goldenTimeUppgrade.etat == "Utilisable") 
+                  ElevatedButton.icon(
+                    onPressed: () => doGoldenTime(),
+                    label: const Icon(Icons.attach_money),
+                  ),
+
+                if (joueur.goldenTimeUppgrade.etat == "Utilisation") 
+                  ElevatedButton.icon(
+                    onPressed: null,
+                    label: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(Icons.currency_exchange),
+                        CircularProgressIndicator(
+                          value: (joueur.goldenTimeUppgrade.getTimerAdvancement()),
+                        )
+                      ],
+                    ),
+                  ),
+
+                if (joueur.goldenTimeUppgrade.etat == "Utilisé") 
+                  ElevatedButton.icon(
+                    onPressed: null,
+                    label: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        const Icon(Icons.money_off),
+                        CircularProgressIndicator(
+                          value: (joueur.goldenTimeUppgrade.getCooldownAdvancement()),
+                        )
+                      ],
+                    ),
+                  ),
+                const SizedBox(width: 50),
+              ],
+
+              if (joueur.getRevive() > 0) ...[
+                const Icon(Icons.add_location),
+                const SizedBox(width: 50),
+              ],
+
+              if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
+                  joueur.getSablier() > 0 &&
+                  timeStop == false) ...[
+                ElevatedButton.icon(
+                  onPressed: () => stopTimeWithHourglass(),
+                  icon: const Icon(Icons.hourglass_empty),
+                  label: Text(joueur.getSablier().toString()),
+                ),
+              ]
+              else if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
+                  joueur.getSablier() > 0 &&
+                  timeStop == true) ...[
+                ElevatedButton.icon(
+                  onPressed: null,
+                  icon: const Icon(Icons.hourglass_full),
+                  label: Text(joueur.getSablier().toString()),
+                ),
+              ]
+              else if (joueur.getLeNiveauDeUneUppgrade("Sablier Fantome") > 0 &&
+                  joueur.getSablier() == 0) ...[
+                const ElevatedButton(
+                  onPressed: null,
+                  child: Icon(Icons.hourglass_disabled),
+                ),
+              ],
+              ],
+            ),
+          ),
+      );
   }
 }

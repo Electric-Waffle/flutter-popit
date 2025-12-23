@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:popit/shop.dart';
 import 'jeu.dart';
+import './tutorial.dart';
 
 class MainMenu extends StatelessWidget {
   const MainMenu({super.key});
@@ -69,6 +70,31 @@ class MainMenu extends StatelessWidget {
               ),
               child: const Text(
                 "Jouer",
+                style: TextStyle(fontSize: 20),
+              ),
+            ),
+            const SizedBox(height: 25),
+            
+            // Le bouton
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const Tutorial(),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 15,
+                ),
+                backgroundColor: const Color.fromARGB(255, 18, 212, 0),
+              ),
+              child: const Text(
+                "Comment jouer",
                 style: TextStyle(fontSize: 20),
               ),
             ),

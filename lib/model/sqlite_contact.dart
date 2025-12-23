@@ -2,12 +2,12 @@ import './player.dart';
 import 'database_contact.dart';
 import 'package:sqlite3/sqlite3.dart';
 
-class LinuxContact implements DatabaseContact {
+class SqliteContact implements DatabaseContact {
   late final Database db;
 
   /// Ouvre la base de données.
   @override
-  Future<void> openDatabase() async {
+  Future<void> openTheDatabase() async {
     db = sqlite3.open('database.db');
     await createTables();
     await createPlayer();
