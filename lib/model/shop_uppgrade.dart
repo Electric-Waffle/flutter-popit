@@ -13,7 +13,15 @@ class ShopUppgrade {
 
   late int _prix;
 
-  ShopUppgrade(this._couleur, this._titre, this._description, this._niveau, this._niveauMax, this._prix);
+  ShopUppgrade(this._couleur, this._titre, this._description, this._niveau, this._niveauMax, listeDePrix)
+  {
+    if (this._niveau >= listeDePrix.length) {
+      this._prix = 0;
+    }
+    else {
+      this._prix = listeDePrix[niveau];
+    }
+  }
 
   Color get couleur => _couleur;
 

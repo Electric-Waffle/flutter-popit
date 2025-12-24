@@ -29,5 +29,10 @@ class GoldenTimeUppgrade {
     return 1.0 - (this.cooldown / this.cooldownMax).toDouble();
   }
 
+  double getTimerAdvancement()
+  {
+    return 1.0 - (this.timer / this.timerMax).toDouble();
+  }
+
 
 }
