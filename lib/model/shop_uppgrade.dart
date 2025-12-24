@@ -18,7 +18,9 @@ class ShopUppgrade {
     if (this._niveau >= listeDePrix.length) {
       this._prix = 0;
     }
-    this._prix = listeDePrix[niveau];
+    else {
+      this._prix = listeDePrix[niveau];
+    }
   }
 
   Color get couleur => _couleur;

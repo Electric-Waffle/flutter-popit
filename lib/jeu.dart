@@ -335,7 +335,7 @@ class _JeuState extends State<Jeu> with RouteAware {
               joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Argent de poche")*10);
               joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Vide Grenier")*100);
               joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Pension de Retraite")*250);
-              joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Cyber-Bitcoin")*(aleatoire.nextInt(1000) + 500));
+              joueur.doGivePointsSansUppgrades(joueur.getLeNiveauDeUneUppgrade("Cyber-Bitcoin")*(aleatoire.nextInt(500) + 2000));
 
               bubbleChangeTimer?.cancel();
             }

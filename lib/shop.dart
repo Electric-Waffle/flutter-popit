@@ -1,6 +1,7 @@
 // Import de la bibliothèque pour gérer les temporisateurs (timers).
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io';
 
 // Import de la bibliothèque pour générer des nombres aléatoires.
 import 'dart:math';
@@ -8,6 +9,7 @@ import 'dart:ui';
 
 // Import du framework Flutter.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'jeu.dart';
 import './model/player_database_helper.dart';
 import './model/player.dart';
@@ -27,6 +29,9 @@ class _UppgradeState extends State<Uppgrade> {
   late Player joueur;
   late List<ShopUppgrade> uppgrades;
   bool joueurCharge = false;
+  final TextEditingController _bloonsAjoutDev = TextEditingController();
+  Timer? _longPressTimer; // pour gerer une pression longue d'un bouton
+  double _tailleMenuStats = 500 ;
   List<String> listeStats = [];
   List<String> listeDeUppgrades = [
     "Vie",
@@ -64,8 +69,8 @@ class _UppgradeState extends State<Uppgrade> {
     "Chance Liquide",
     "Ongle de Saphir",
     "Lampe Magique",
-    "Pack de developpeur",
-    "Anneau d'Osiris"
+    "Anneau d'Osiris",
+    "Cyber-Portefeuille"
   ];
 
   @override
@@ -77,6 +82,7 @@ class _UppgradeState extends State<Uppgrade> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _bloonsAjoutDev.dispose();
     super.dispose();
   }
 
@@ -89,37 +95,53 @@ class _UppgradeState extends State<Uppgrade> {
       this.joueurCharge = true;
     }); // pour que l'UI se mette à jour avec le joueur chargé
     initListeStats();
+    setState(() {
+      this._tailleMenuStats = (Platform.isAndroid || Platform.isIOS) ? MediaQuery.of(context).size.width * 0.85 : MediaQuery.of(context).size.width * 0.35 ;
+    }); // 
+
   }
 
-  void initListeStats()
-  {
-    this.listeStats = [
-      "Points de vie : ${joueur.getVie()}",
-      "Regénération : ${joueur.getLeNiveauDeUneUppgrade("Regénération")*0.1 + joueur.getLeNiveauDeUneUppgrade("Cyber-Regénération")*0.5} points de vie/seconde",
-      "Réduction des dégâts : ${joueur.getLeNiveauDeUneUppgrade("Armure")*1 + joueur.getLeNiveauDeUneUppgrade("Cyber-Armure")*1}%",
-      "Chance de doubler les gains d'un clic : ${joueur.getLeNiveauDeUneUppgrade("Patte de Lapin")*1}%",
+  void initListeStats() {
+    final patte = joueur.getLeNiveauDeUneUppgrade("Patte de Lapin").toDouble();
+    final cyber = joueur.getLeNiveauDeUneUppgrade("Cyber-Patte de Lapin");
+    final chance = cyber > 0 ? (2 * patte - patte * patte / 100) : patte;
 
+    final gainFinauxSansBitcoin =
+        (joueur.getLeNiveauDeUneUppgrade("Argent de poche") * 10) +
+            (joueur.getLeNiveauDeUneUppgrade("Vide Grenier") * 100) +
+            (joueur.getLeNiveauDeUneUppgrade("Pension de Retraite") * 250);
+
+    this.listeStats = [
+      "__==[JOUEUR]==__",
+      "Points de vie : ${joueur.getVie()}",
+      "Regénération : ${joueur.getLeNiveauDeUneUppgrade("Regénération") * 0.1 + joueur.getLeNiveauDeUneUppgrade("Cyber-Regénération") * 0.5} points de vie/seconde",
+      "Réduction des dégâts : ${joueur.getLeNiveauDeUneUppgrade("Armure") * 1 + joueur.getLeNiveauDeUneUppgrade("Cyber-Armure") * 1}%",
+      "Vie supplémentaire : ${joueur.getLeNiveauDeUneUppgrade("Ankh")}",
+      "__==[POUVOIRS]==__",
+      "Cooldown de Penny : ${50 - (2 * joueur.getLeNiveauDeUneUppgrade("Penny"))} secondes",
+      "Chance de doubler les gains de Penny : ${joueur.getLeNiveauDeUneUppgrade("Carter") * 25}%",
+      "Nombre d'utilisations du Sablier Fantome : ${joueur.getLeNiveauDeUneUppgrade("Sablier Fantome")}",
+      "__==[BONUS AU CLIC]==__",
+      "Chance de doubler les gains d'un clic : ${chance.toStringAsFixed(2)}%",
+      "Chance de quintupler les gains finaux d'un clic : ${joueur.getLeNiveauDeUneUppgrade("Bétile de Delphes") * 1}%",
+      "Bonus fixe de gains par clic : ${joueur.getLeNiveauDeUneUppgrade("Investissement") + (joueur.getLeNiveauDeUneUppgrade("Cyber-Investissement") * 10)} bloons",
+      "Bonus fixe de gains quand vie>90% : ${joueur.getLeNiveauDeUneUppgrade("Soleil") * (joueur.getLeNiveauDeUneUppgrade("Couronne") + 1)} bloons",
+      "Bonus fixe de gains quand 40%<vie<60% : ${joueur.getLeNiveauDeUneUppgrade("Cyber-Espace") * 2} bloons",
+      "Bonus fixe de gains quand vie<10% : ${joueur.getLeNiveauDeUneUppgrade("Ongle de Saphir") > 0 ? joueur.getLeNiveauDeUneUppgrade("Lune") * 3 * joueur.getLeNiveauDeUneUppgrade("Ongle de Saphir") : joueur.getLeNiveauDeUneUppgrade("Lune")} bloons",
+      "Chance de drainer 1pv quand on crève un ballon rouge : ${joueur.getLeNiveauDeUneUppgrade("Faucheuse") * 2}%",
+      "Chance d'enlever 1sec au cooldown de Penny quand on crève un ballon bleu : ${joueur.getLeNiveauDeUneUppgrade("Anneau d'Osiris") * 5}%",
+      "Chance de ne pas reset le comboMax en crevant une tuile : ${joueur.getLeNiveauDeUneUppgrade("Chance Liquide") * 10}%",
+      "__==[BONUS PASSIF]==__",
+      "Gain par génération de bloons : ${joueur.getLeNiveauDeUneUppgrade("Dividendes") + (joueur.getLeNiveauDeUneUppgrade("Cyber-Dividendes") * 10)} bloons",
+      "Gains en fin de partie : [${gainFinauxSansBitcoin + joueur.getLeNiveauDeUneUppgrade("Cyber-Bitcoin") * 500} ~ ${gainFinauxSansBitcoin + joueur.getLeNiveauDeUneUppgrade("Cyber-Bitcoin") * 2500}] + ${joueur.getLeNiveauDeUneUppgrade("Dernier profit") > 0 ? joueur.getLeNiveauDeUneUppgrade("Dernier profit") * joueur.getLeNiveauDeUneUppgrade("Dernier profit") * 5 : joueur.getLeNiveauDeUneUppgrade("Dernier profit")} * comboMax bloons ",
+      "Gains par ballons éclatés lors de la mort : ${joueur.getLeNiveauDeUneUppgrade("Supernova") * 3}",
     ];
   }
 
   void recreeListeUppgrades() {
     this.uppgrades = [
-      ShopUppgrade(
-          Colors.black,
-          "Pack de developpeur",
-          "Gagne un milion de bloons. Comme ca.",
-          joueur.getLeNiveauDeUneUppgrade("Pack de developpeur"),
-          1,
-          [1]),
-
-      ShopUppgrade(
-          Colors.red,
-          "Vie",
-          "Gagne 10 points de vie par niveau",
-          joueur.getLeNiveauDeUneUppgrade("Vie"),
-          5,
-          [10, 20, 30, 40, 50]),
-
+      ShopUppgrade(Colors.red, "Vie", "Gagne 10 points de vie par niveau",
+          joueur.getLeNiveauDeUneUppgrade("Vie"), 5, [10, 20, 30, 40, 50]),
       ShopUppgrade(
           Colors.pink,
           "Regénération",
@@ -127,7 +149,6 @@ class _UppgradeState extends State<Uppgrade> {
           joueur.getLeNiveauDeUneUppgrade("Regénération"),
           10,
           [25, 45, 65, 85, 105, 125, 145, 165, 185, 205]),
-
       ShopUppgrade(
           Colors.blueGrey,
           "Armure",
@@ -135,41 +156,38 @@ class _UppgradeState extends State<Uppgrade> {
           joueur.getLeNiveauDeUneUppgrade("Armure"),
           10,
           [50, 75, 100, 150, 175, 200, 250, 275, 300, 500]),
-
       ShopUppgrade(
           Colors.yellow.shade900,
           "Patte de Lapin",
           "Augmente de 1% les chances de doubler les gains d'un clic",
           joueur.getLeNiveauDeUneUppgrade("Patte de Lapin"),
-          25,
-          [
-            100,
-            125,
-            150,
-            175,
-            200,
-            2250,
-            2500,
-            2750,
-            3000,
-            32500,
-            35000,
-            37500,
-            40000,
-            42500,
-            45000,
-            47500,
-            50000,
-            52500,
-            55000,
-            57500,
-            60000,
-            62500,
-            65000,
-            67500,
-            70000
-          ]),
-
+          25, [
+        100,
+        125,
+        150,
+        175,
+        200,
+        2250,
+        2500,
+        2750,
+        3000,
+        32500,
+        35000,
+        37500,
+        40000,
+        42500,
+        45000,
+        47500,
+        50000,
+        52500,
+        55000,
+        57500,
+        60000,
+        62500,
+        65000,
+        67500,
+        70000
+      ]),
       ShopUppgrade(
           Colors.brown.shade900,
           "Dividendes",
@@ -177,7 +195,6 @@ class _UppgradeState extends State<Uppgrade> {
           joueur.getLeNiveauDeUneUppgrade("Dividendes"),
           5,
           [150, 175, 200, 225, 250]),
-
       ShopUppgrade(
           Colors.cyan.shade900,
           "Investissement",
@@ -185,7 +202,6 @@ class _UppgradeState extends State<Uppgrade> {
           joueur.getLeNiveauDeUneUppgrade("Investissement"),
           1,
           [500]),
-
       ShopUppgrade(
           Colors.pink.shade900,
           "Argent de poche",
@@ -193,7 +209,6 @@ class _UppgradeState extends State<Uppgrade> {
           joueur.getLeNiveauDeUneUppgrade("Argent de poche"),
           5,
           [20, 40, 80, 100, 120]),
-
       ShopUppgrade(
           Colors.indigo.shade900,
           "Destockage",
@@ -210,19 +225,18 @@ class _UppgradeState extends State<Uppgrade> {
             "Penny",
             "Un doublon Rouge qui arrete la génération de bloon, les rend increvable, et double les gains. Cooldown : 50 - 2*niveau secondes.",
             joueur.getLeNiveauDeUneUppgrade("Penny"),
-            10,
-            [
-              500,
-              1000,
-              5000,
-              10000,
-              50000,
-              100000,
-              200000,
-              300000,
-              500000,
-              1000000
-            ]),
+            10, [
+          500,
+          1000,
+          5000,
+          10000,
+          50000,
+          100000,
+          200000,
+          300000,
+          500000,
+          1000000
+        ]),
         ShopUppgrade(
             Colors.lightGreen.shade900,
             "Dernier profit",
@@ -289,23 +303,22 @@ class _UppgradeState extends State<Uppgrade> {
             "Couronne",
             "La partie manquante de Soleil, multipliant ses gains par 1*niveau.",
             joueur.getLeNiveauDeUneUppgrade("Couronne"),
-            10,
-            [
-              15000,
-              17000,
-              19000,
-              20000,
-              22000,
-              24000,
-              25000,
-              150000,
-              170000,
-              190000,
-              200000,
-              220000,
-              240000,
-              250000
-            ]),
+            10, [
+          15000,
+          17000,
+          19000,
+          20000,
+          22000,
+          24000,
+          25000,
+          150000,
+          170000,
+          190000,
+          200000,
+          220000,
+          240000,
+          250000
+        ]),
         ShopUppgrade(
             Colors.lightBlue.shade900,
             "Supernova",
@@ -325,19 +338,18 @@ class _UppgradeState extends State<Uppgrade> {
             "Bétile de Delphes",
             "Augmente de 1*niveau% les chances de quintupler les gains finaux d'un clic",
             joueur.getLeNiveauDeUneUppgrade("Bétile de Delphes"),
-            10,
-            [
-              10000,
-              20000,
-              30000,
-              40000,
-              50000,
-              60000,
-              70000,
-              80000,
-              90000,
-              100000
-            ]),
+            10, [
+          10000,
+          20000,
+          30000,
+          40000,
+          50000,
+          60000,
+          70000,
+          80000,
+          90000,
+          100000
+        ]),
         ShopUppgrade(
             Colors.pink.shade900,
             "Pension de Retraite",
@@ -376,37 +388,35 @@ class _UppgradeState extends State<Uppgrade> {
             "Cyber-Regénération",
             "Regenere 0.5 points de vie/seconde supplémentaire par niveau",
             joueur.getLeNiveauDeUneUppgrade("Cyber-Regénération"),
-            10,
-            [
-              30000,
-              35000,
-              40000,
-              45000,
-              50000,
-              55000,
-              60000,
-              65000,
-              70000,
-              75000
-            ]),
+            10, [
+          30000,
+          35000,
+          40000,
+          45000,
+          50000,
+          55000,
+          60000,
+          65000,
+          70000,
+          75000
+        ]),
         ShopUppgrade(
             Colors.blueGrey,
             "Cyber-Armure",
             "Réduit les dégats reçus de 1% supplémentaire par niveau",
             joueur.getLeNiveauDeUneUppgrade("Cyber-Armure"),
-            10,
-            [
-              40000,
-              42000,
-              44000,
-              46000,
-              48000,
-              50000,
-              52000,
-              54000,
-              56000,
-              58000
-            ]),
+            10, [
+          40000,
+          42000,
+          44000,
+          46000,
+          48000,
+          50000,
+          52000,
+          54000,
+          56000,
+          58000
+        ]),
         ShopUppgrade(
             Colors.yellow.shade900,
             "Cyber-Patte de Lapin",
@@ -438,10 +448,27 @@ class _UppgradeState extends State<Uppgrade> {
         ShopUppgrade(
             Colors.pink.shade900,
             "Cyber-Bitcoin",
-            "Gagne (entre 500 et 1500) * niveau bloon a la fin de chaque partie.",
+            "Gagne (entre 500 et 2500) * niveau bloon a la fin de chaque partie.",
             joueur.getLeNiveauDeUneUppgrade("Cyber-Bitcoin"),
             5,
             [3000, 6000, 9000, 12000, 15000]),
+        ShopUppgrade(
+            Colors.lightGreen.shade900,
+            "Cyber-Portefeuille",
+            "Un logiciel légendaire. Multiplie les gains du Dernier Profit par 5*niveau.",
+            joueur.getLeNiveauDeUneUppgrade("Cyber-Portefeuille"),
+            10, [
+          50000,
+          75000,
+          100000,
+          125000,
+          150000,
+          175000,
+          200000,
+          225000,
+          250000,
+          275000
+        ]),
         ShopUppgrade(
             Colors.indigo.shade900,
             "Cyber-Braquage",
@@ -455,40 +482,59 @@ class _UppgradeState extends State<Uppgrade> {
     if (joueur.getLeNiveauDeUneUppgrade("Cyber-Braquage") > 0) {
       this.uppgrades.addAll([
         ShopUppgrade(
-            const Color.fromARGB(255, 225, 169, 0),
-            "Chance Liquide",
-            "Bière Trappiste. 10*niveau% de chance de ne pas reset le comboMax en touchant un carré vide.",
-            joueur.getLeNiveauDeUneUppgrade("Chance Liquide"),
-            5,
-            [300000, 350000, 400000, 450000, 500000],),
+          const Color.fromARGB(255, 225, 169, 0),
+          "Chance Liquide",
+          "Bière Trappiste. 10*niveau% de chance de ne pas reset le comboMax en touchant un carré vide.",
+          joueur.getLeNiveauDeUneUppgrade("Chance Liquide"),
+          5,
+          [300000, 350000, 400000, 450000, 500000],
+        ),
         ShopUppgrade(
             Colors.indigoAccent.shade700,
             "Ongle de Saphir",
             "La capsule d'une biere ancienne. Taillée dans le joyau de Lune, elle multiplie ses gains par 1*niveau.",
             joueur.getLeNiveauDeUneUppgrade("Ongle de Saphir"),
-            10,
-            [
-              300000,
-              350000,
-              400000,
-              450000,
-              500000,
-              550000,
-              600000,
-              700000,
-              750000,
-              800000
-            ]),
+            10, [
+          300000,
+          350000,
+          400000,
+          450000,
+          500000,
+          550000,
+          600000,
+          700000,
+          750000,
+          800000
+        ]),
         ShopUppgrade(
             Colors.pink.shade900,
             "Lampe Magique",
             "Une NEIPA fruitée. Gagne WIP*niveau bloon a la fin de chaque parties.",
             joueur.getLeNiveauDeUneUppgrade("Lampe Magique"),
             5,
-            [3000, 6000, 9000, 12000, 15000]
-          ),
+            [3000, 6000, 9000, 12000, 15000]),
       ]);
     }
+  }
+
+  Future<void> enleveBloons() async {
+    int bloonsAEnlever = int.tryParse(_bloonsAjoutDev.text) ?? 0;
+    setState(() {
+      this._bloonsAjoutDev.clear();
+      joueur.setPoint(joueur.getPoint() - bloonsAEnlever);
+    });
+
+    await sauvegarde.saveData(joueur);
+  }
+
+  Future<void> ajouteBloons() async {
+    int bloonsAAjouter = int.tryParse(_bloonsAjoutDev.text) ?? 0;
+    setState(() {
+      this._bloonsAjoutDev.clear();
+      joueur.setPoint(joueur.getPoint() + bloonsAAjouter);
+    });
+
+    await sauvegarde.saveData(joueur);
   }
 
   Future<void> creeNiveauUppgradeSiExistePas() async {
@@ -507,10 +553,24 @@ class _UppgradeState extends State<Uppgrade> {
       setState(() {
         joueur.doUppgradeShop(uppgradeAAcheter.titre, uppgradeAAcheter.prix);
         recreeListeUppgrades(); // rebuild UI
+        initListeStats();
       });
 
       await sauvegarde.saveData(joueur); // sauvegarde async
     }
+  }
+
+  Future<void> deleteCharacter() async {
+
+    // suppression du joueur
+    setState(() {
+      this.joueur = Player.fromDatabase(1, 10, 0, "{}");
+      recreeListeUppgrades(); // rebuild UI
+      initListeStats();
+    });
+
+    // sauvegarde du joueur
+    await sauvegarde.saveData(joueur); // sauvegarde async
   }
 
   @override
@@ -527,13 +587,26 @@ class _UppgradeState extends State<Uppgrade> {
           Container(
             width: 50,
           ),
-          ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  isInCharacterMenu = !isInCharacterMenu;
-                });
-              },
-              child: Icon(Icons.person_4)),
+          GestureDetector(
+            onTapDown: (_) {
+              _longPressTimer = Timer(const Duration(seconds: 5), () {
+                deleteCharacter();
+              });
+            },
+            onTapUp: (_) {
+              _longPressTimer?.cancel();
+            },
+            onTapCancel: () {
+              _longPressTimer?.cancel();
+            },
+            child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    isInCharacterMenu = !isInCharacterMenu;
+                  });
+                },
+                child: Icon(Icons.person_4)),
+          ),
           Container(
             width: 50,
           ),
@@ -541,7 +614,6 @@ class _UppgradeState extends State<Uppgrade> {
       ),
       body: Stack(
         children: [
-
           Padding(
             padding: const EdgeInsets.all(15.0),
             child: GridView.builder(
@@ -556,7 +628,6 @@ class _UppgradeState extends State<Uppgrade> {
               },
             ),
           ),
-
           if (this.isInCharacterMenu) ...[
             BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
@@ -565,64 +636,102 @@ class _UppgradeState extends State<Uppgrade> {
               ),
             ),
           ],
-
           AnimatedPositioned(
-              right: this.isInCharacterMenu ? 0 : (MediaQuery.of(context).size.width * -0.35),
-              top: 0,
-              curve: Curves.easeOutCubic,
-              bottom: 0,
-              width: MediaQuery.of(context).size.width * 0.35,
-              duration: Duration(milliseconds: 200),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 143, 131, 131),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black54,
-                      blurRadius: 20,
-                      offset: Offset(-5, 0),
-                    ),
-                  ],
-                ),
-                child: SafeArea(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(20),
-                    itemCount: listeStats.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          listeStats[index],
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      );
-                    },
+            right: this.isInCharacterMenu
+                ? 0
+                : -this._tailleMenuStats,
+            top: 0,
+            curve: Curves.easeOutCubic,
+            bottom: 0,
+            width: this._tailleMenuStats,
+            duration: Duration(milliseconds: 200),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 143, 131, 131),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black54,
+                    blurRadius: 20,
+                    offset: Offset(-5, 0),
                   ),
-                ),
+                ],
               ),
+              child: SafeArea(
+                  child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: listeStats.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            listeStats[index],
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                          onPressed: () => enleveBloons(),
+                          child: Icon(Icons.remove_circle)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: this._bloonsAjoutDev,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            labelText: "Ajoute/enleve des points bloons",
+                            focusColor: Colors.white,
+                            iconColor: Colors.white,
+                            labelStyle: TextStyle(color: Colors.white),
+                            floatingLabelStyle: TextStyle(color: Colors.white),
+                          ),
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                          onPressed: () => ajouteBloons(),
+                          child: Icon(Icons.add_circle))
+                    ],
+                  ),
+                ],
+              )),
             ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const Jeu(gridSize: 10, cellSize: 40.0),
-            ),
-          );
+      floatingActionButton: !isInCharacterMenu
+          ? FloatingActionButton(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const Jeu(gridSize: 10, cellSize: 40.0),
+                  ),
+                );
 
-          if (result == true) {
-            Player joueurAJour = await sauvegarde.loadData();
-            setState(() {
-              joueur.reloadPlayer(joueurAJour);
-            });
-          }
-        },
-        tooltip: 'Jouer',
-        backgroundColor: Color.fromARGB(255, 200, 200, 200),
-        child: const Icon(Icons.play_arrow),
-      ),
+                if (result == true) {
+                  Player joueurAJour = await sauvegarde.loadData();
+                  setState(() {
+                    joueur.reloadPlayer(joueurAJour);
+                  });
+                }
+              },
+              tooltip: 'Jouer',
+              backgroundColor: const Color.fromARGB(255, 200, 200, 200),
+              child: const Icon(Icons.play_arrow),
+            )
+          : null,
     );
   }
 

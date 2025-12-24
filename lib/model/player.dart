@@ -126,7 +126,10 @@ class Player {
 
   void setPoint(int point)
   {
-    this._point = point;
+    this._point = point ;
+    if (this._point < 0) {
+      this._point = 0 ;
+    }
   }
 
   void setNiveauUppgrades (Map<String,int> niveauUppgrades)
@@ -152,17 +155,18 @@ class Player {
   }
 
   void cashoutCombo() {
-
+    int points = 0;
     if (getCombo() > getComboMax()) {
-      doGivePoints((getCombo()*getLeNiveauDeUneUppgrade("Dernier profit")).toInt());
+      points = (getCombo()*getLeNiveauDeUneUppgrade("Dernier profit")).toInt();
     }
     else 
     {
-      doGivePoints((getComboMax()*getLeNiveauDeUneUppgrade("Dernier profit")).toInt());
+      points = (getComboMax()*getLeNiveauDeUneUppgrade("Dernier profit")).toInt();
     }
 
-    //setCombo(0);
-    //setComboMax(0);
+    points *= getLeNiveauDeUneUppgrade("Cyber-Portefeuille")>0 ? getLeNiveauDeUneUppgrade("Cyber-Portefeuille") * 5 : 1;
+
+    doGivePoints(points);
 
   }
 
@@ -188,12 +192,12 @@ class Player {
 
     if (getVie() > getVieBase()*0.9)
     {
-      points += getLeNiveauDeUneUppgrade("Soleil") * getLeNiveauDeUneUppgrade("Couronne");
+      points += getLeNiveauDeUneUppgrade("Soleil") * (getLeNiveauDeUneUppgrade("Couronne") + 1);
     }
 
     if (getVie() < getVieBase()*0.1)
     {
-      points += getLeNiveauDeUneUppgrade("Lune") * 3 * getLeNiveauDeUneUppgrade("Ongle de Saphir");
+      points += getLeNiveauDeUneUppgrade("Ongle de Saphir") > 0 ? getLeNiveauDeUneUppgrade("Lune") * 3 * getLeNiveauDeUneUppgrade("Ongle de Saphir") : getLeNiveauDeUneUppgrade("Lune");
     }
 
     if (getVieBase()*0.4 < getVie() && getVie() < getVieBase()*0.6)
@@ -274,10 +278,6 @@ class Player {
 
       case "Cyber-Vie":
         setVieBase(getVieBase()+20);
-        break;
-
-      case "Pack de developpeur":
-        doGivePointsSansUppgrades(1000000);
         break;
 
       default:
